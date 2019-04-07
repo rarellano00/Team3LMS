@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,14 +15,14 @@ namespace LMS.Controllers
 
     // TODO: Uncomment and change 'X' after you have scaffoled
 
-    /*
-    protected TeamXLMSContext db;
+    
+    protected Team3LMSContext db;
 
     public CommonController()
     {
-      db = new TeamXLMSContext();
+      db = new Team3LMSContext();
     }
-    */
+    
 
     /*
      * WARNING: This is the quick and easy way to make the controller
@@ -31,8 +32,8 @@ namespace LMS.Controllers
     */
 
     // TODO: Uncomment and change 'X' after you have scaffoled
-    /*
-    public void UseLMSContext(TeamXLMSContext ctx)
+    
+    public void UseLMSContext(Team3LMSContext ctx)
     {
       db = ctx;
     }
@@ -45,7 +46,7 @@ namespace LMS.Controllers
       }
       base.Dispose(disposing);
     }
-    */
+    
 
 
 
@@ -57,9 +58,21 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetDepartments()
     {
-      // TODO: Do not return this hard-coded array.
-      return Json(new[] { new { name = "None", subject = "NONE" } });
-    }
+
+      //return Json(new[] { new { name = "None", subject = "NONE" } });
+
+            
+                var query =
+                    from d in db.Department
+
+                    select new
+                    {
+                        name = d.Name,
+                        subject = d.Abbrv
+                    };
+                return Json(query.ToArray());
+            
+        }
 
 
 
