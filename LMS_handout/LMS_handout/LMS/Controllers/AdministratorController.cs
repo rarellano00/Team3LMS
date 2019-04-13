@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -40,8 +41,18 @@ namespace LMS.Controllers
     /// <returns>The JSON result</returns>
     public IActionResult GetCourses(string subject)
     {
-      
-      return Json(null);
+            var query =
+                from d in db.Department
+                where d.Abbrv == subject
+                join c in db.Course on d.DepartmentId equals c.DepartmentId
+                select new
+                {
+                    name = c.Name,
+                    number = c.Number
+                };
+                      
+
+      return Json(query.ToArray());
     }
 
 
@@ -59,8 +70,17 @@ namespace LMS.Controllers
     /// <returns>The JSON result</returns>
     public IActionResult GetProfessors(string subject)
     {
-   
-      return Json(null);
+            var query =
+                from d in db.Department
+                where d.Abbrv == subject
+                join p in db.Professor on d.DepartmentId equals p.DepartmentId
+                select new
+                {
+                    lname = p.LName,
+                    fname = p.FName,
+                    uid = p.UId
+                };
+      return Json(query.ToArray());
     }
 
 
@@ -76,7 +96,27 @@ namespace LMS.Controllers
     /// false if the course already exists, true otherwise.</returns>
     public IActionResult CreateCourse(string subject, int number, string name)
     {
-      
+            Course c = new Course();
+            c.Number = (short)number;
+            c.Name = name;
+            int depId = 4;
+            var query =
+                (from d in db.Department
+                where d.Abbrv == subject
+                select d.DepartmentId).ToList();
+            foreach (var item in query)
+            {
+                depId = int.Parse(item.ToString());
+            }
+
+            c.DepartmentId = (uint)depId;
+
+
+            // need to detect if was added or not 
+            db.Course.Add(c);
+            db.SaveChanges();
+
+
 
       return Json(new { success = false });
     }
