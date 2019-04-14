@@ -99,7 +99,7 @@ namespace LMS.Controllers
             Course c = new Course();
             c.Number = (short)number;
             c.Name = name;
-            int depId = 4;
+            int depId = -1;
             var query =
                 (from d in db.Department
                 where d.Abbrv == subject
@@ -111,14 +111,17 @@ namespace LMS.Controllers
 
             c.DepartmentId = (uint)depId;
 
-
             // need to detect if was added or not 
             db.Course.Add(c);
             db.SaveChanges();
+            if(c.CourseId <0)
+            {
+                return Json(new { success = false });
+            }
 
 
 
-      return Json(new { success = false });
+      return Json(new { success = true });
     }
 
 
@@ -141,8 +144,33 @@ namespace LMS.Controllers
     /// true otherwise.</returns>
     public IActionResult CreateClass(string subject, int number, string season, int year, DateTime start, DateTime end, string location, string instructor)
     {
-      
-      return Json(new { success = false });
+            Class c = new Class();
+            c.Season = season;
+            c.Start = start.TimeOfDay;
+            c.End = end.TimeOfDay;
+            c.Location = location;
+            c.Year = (uint)year;
+            c.ProfessorId = (uint)int.Parse(instructor.Remove(0, 1));
+
+            var query =
+                from course in db.Course
+                where course.Number == number
+                select course.CourseId;
+
+            foreach (var item in query)
+            {
+                c.CourseId = (uint)int.Parse(item.ToString());
+                break;
+            }
+
+            db.Class.Add(c);
+            db.SaveChanges();
+            if(c.ClassId < 0)
+            {
+                return Json(new { success = false });
+            }
+
+      return Json(new { success = true });
     }
 
 

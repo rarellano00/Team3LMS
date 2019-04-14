@@ -12,9 +12,6 @@ namespace LMS.Controllers
   {
 
     /*******Begin code to modify********/
-
-    // TODO: Uncomment and change 'X' after you have scaffoled
-
     
     protected Team3LMSContext db;
 
@@ -31,8 +28,6 @@ namespace LMS.Controllers
      *          (look this up if interested).
     */
 
-    // TODO: Uncomment and change 'X' after you have scaffoled
-    
     public void UseLMSContext(Team3LMSContext ctx)
     {
       db = ctx;
@@ -88,9 +83,24 @@ namespace LMS.Controllers
     /// </summary>
     /// <returns>The JSON array</returns>
     public IActionResult GetCatalog()
-    {     
+    {
+            var query =
+                from d in db.Department
+                select new
+                {
+                    subject = d.Abbrv,
+                    dname = d.Name,
+                    courses = from c in d.Course
+                              select new
+                              {
+                                  number = c.Number,
+                                  cname = c.Name
+                              }
+                };
 
-      return Json(null);
+            //return Json(new[] { new { name = "None", subject = "NONE" } });
+
+            return Json(query.ToArray());
     }
 
     /// <summary>
@@ -109,8 +119,21 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetClassOfferings(string subject, int number)
     {
-      
-      return Json(null);
+
+            var query =
+                from c in db.Class
+                select new
+                {
+                    season = c.Season,
+                    year = c.Year,
+                    location = c.Location,
+                    start = c.Start,
+                    end = c.End,
+                    fname = c.Professor.FName,
+                    lname = c.Professor.LName
+                };
+
+            return Json(query.ToArray());
     }
 
     /// <summary>
@@ -127,8 +150,23 @@ namespace LMS.Controllers
     /// <returns>The assignment contents</returns>
     public IActionResult GetAssignmentContents(string subject, int num, string season, int year, string category, string asgname)
     {
+            var query =
+                from d in db.Department
+                where d.Abbrv == subject
+                join c in db.Course on d.DepartmentId equals c.DepartmentId
+                where c.Number == num
+                join cl in db.Class on c.CourseId equals cl.CourseId
+                where cl.Season == season && cl.Year == year
+                join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
+                where ac.Name == category
+                join a in db.Assignment on ac.AcId equals a.AcId
+                where a.Name == asgname
+                select a.Contents;
+            
 
-      return Content("");
+            // TODO : returning correctly?
+
+      return Content(query.ToString());
     }
 
 
@@ -148,8 +186,26 @@ namespace LMS.Controllers
     /// <returns>The submission text</returns>
     public IActionResult GetSubmissionText(string subject, int num, string season, int year, string category, string asgname, string uid)
     {
-      
-      return Content("");
+            uint sID = (uint)int.Parse(uid.Remove(0, 1));
+
+            var query =
+                      from d in db.Department
+                      where d.Abbrv == subject
+                      join c in db.Course on d.DepartmentId equals c.DepartmentId
+                      where c.Number == num
+                      join cl in db.Class on c.CourseId equals cl.CourseId
+                      where cl.Season == season && cl.Year == year
+                      join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
+                      where ac.Name == category
+                      join a in db.Assignment on ac.AcId equals a.AcId
+                      where a.Name == asgname
+                      join s in db.Submission on a.AId equals s.AId
+                      where s.UId == sID
+                      select s.Contents;
+
+            // TODO : correct return statement?
+
+            return Content(query.ToString());
     }
 
 
@@ -171,12 +227,36 @@ namespace LMS.Controllers
     /// </returns>
     public IActionResult GetUser(string uid)
     {
-     
-      return Json(new { success = false } );
+            uint theID = (uint)int.Parse(uid.Remove(0, 1));
+
+            //check if user exists
+            var query =
+                (from a in db.Administrator
+                 where a.UId == theID
+                 select a.UId).Union
+                 (from p in db.Professor
+                  where p.UId == theID
+                  select p.UId).Union
+                 (from s in db.Student
+                  where s.UId == theID
+                  select s.UId);
+
+            // TODO : how do i join with departments????
+
+            if(!query.Any())
+            {
+                return Json(new { success = false });
+            }
+            else
+            {
+
+            }
+
+            return Json(new { success = false });
+        }
+
+
+        /*******End code to modify********/
+
     }
-
-
-    /*******End code to modify********/
-
-  }
 }

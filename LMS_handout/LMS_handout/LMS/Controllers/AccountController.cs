@@ -500,11 +500,15 @@ namespace LMS.Controllers
                   orderby a.UId descending
                   select a.UId
                   ).ToList();
-
+           // Comparer<uint> cmp = (uint lhs, uint rhs)->lhs - rhs;
+            query.Sort(Comparer<uint>.Create((uint lhs, uint rhs) => (int)(rhs-lhs)));
+            
             foreach (var entry in query)
             {
                 highest = int.Parse(entry.ToString());
+                break;
             }
+            
             highest++;
 
             var query2 =
