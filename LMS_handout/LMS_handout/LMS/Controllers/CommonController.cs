@@ -227,6 +227,11 @@ namespace LMS.Controllers
         /// </returns>
         public IActionResult GetUser(string uid)
         {
+            /* TODO : 
+             * Note this is a pretty brute force solution, maybe should try to optimize later.
+             */
+
+
             uint theID = (uint)int.Parse(uid.Remove(0, 1));
 
             var squery =
