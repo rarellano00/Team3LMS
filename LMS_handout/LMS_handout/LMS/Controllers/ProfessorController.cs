@@ -105,8 +105,35 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetStudentsInClass(string subject, int num, string season, int year)
     {
-      
-      return Json(null);
+            int theID = -1;
+            var query =
+                from d in db.Department
+                where d.Abbrv == subject
+                join co in db.Course on d.DepartmentId equals co.DepartmentId
+                where co.Number == num
+                join cl in db.Class on co.CourseId equals cl.CourseId
+                where cl.Season == season && cl.Year == year
+                select cl.ClassId;
+            foreach (var item in query)
+            {
+                theID = int.Parse(item.ToString());
+            }
+
+            var query2 =
+                from e in db.Enrolled
+                where e.ClassId == theID
+                join s in db.Student on e.UId equals s.UId
+                select new
+                {
+                    fname = s.FName,
+                    lname = s.LName,
+                    uid = s.UId,
+                    dob = s.Dob,
+                    grade = e.Grade
+                };
+            
+
+      return Json(query2.ToArray());
     }
 
 
@@ -244,9 +271,23 @@ namespace LMS.Controllers
     /// <param name="uid">The professor's uid</param>
     /// <returns>The JSON array</returns>
     public IActionResult GetMyClasses(string uid)
-    {     
+    {
+            int theid = int.Parse(uid.Remove(0, 1));
+            var query =
+                from cl in db.Class
+                where cl.ProfessorId == theid
+                join co in db.Course on cl.CourseId equals co.CourseId
+                join d in db.Department on co.DepartmentId equals d.DepartmentId
+                select new
+                {
+                    subject = d.Abbrv,
+                    number = co.Number,
+                    name = co.Name,
+                    season = cl.Season,
+                    year = cl.Year
+                };
 
-      return Json(null);
+      return Json(query.ToArray());
     }
 
 
