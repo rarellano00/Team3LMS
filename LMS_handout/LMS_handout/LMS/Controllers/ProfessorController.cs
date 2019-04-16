@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -105,6 +106,7 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetStudentsInClass(string subject, int num, string season, int year)
     {
+            // finds classID and parses it
             int theID = -1;
             var query =
                 from d in db.Department
@@ -118,6 +120,8 @@ namespace LMS.Controllers
             {
                 theID = int.Parse(item.ToString());
             }
+
+            // finds students that are enrolled in same class ID 
 
             var query2 =
                 from e in db.Enrolled
@@ -156,8 +160,24 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetAssignmentsInCategory(string subject, int num, string season, int year, string category)
     {
+            var query =
+                from d in db.Department
+                where d.Abbrv == subject
+                join co in db.Course on d.DepartmentId equals co.DepartmentId
+                where co.Number == num
+                join cl in db.Class on co.CourseId equals cl.CourseId
+                where cl.Season == season && cl.Year == year
+                join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
+                where ac.Name == category
+                join a in db.Assignment on ac.AcId equals a.AcId
+                select new
+                {
+                    aname = a.Name,
+                    cname = ac.Name,
+                    due = a.DueDate
+                };
 
-      return Json(null);
+      return Json(query.ToArray());
     }
 
 
@@ -174,9 +194,22 @@ namespace LMS.Controllers
     /// <param name="category">The name of the assignment category in the class</param>
     /// <returns>The JSON array</returns>
     public IActionResult GetAssignmentCategories(string subject, int num, string season, int year)
-    {      
+    {
+            var query =
+                from d in db.Department
+                where d.Abbrv == subject
+                join co in db.Course on d.DepartmentId equals co.DepartmentId
+                where co.Number == num
+                join cl in db.Class on co.CourseId equals cl.CourseId
+                where cl.Season == season && cl.Year == year
+                join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
+                select new
+                {
+                    name = ac.Name,
+                    weight = ac.Weight
+                };
 
-      return Json(null);
+      return Json(query.ToArray());
     }
 
     /// <summary>
@@ -211,6 +244,8 @@ namespace LMS.Controllers
     /// <returns>A JSON object containing success = true/false</returns>
     public IActionResult CreateAssignment(string subject, int num, string season, int year, string category, string asgname, int asgpoints, DateTime asgdue, string asgcontents)
     {
+            Assignment a = new Assignment();
+
 
       return Json(new { success = false });
     }
@@ -235,8 +270,29 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetSubmissionsToAssignment(string subject, int num, string season, int year, string category, string asgname)
     {
+            var query =
+                from d in db.Department
+                where d.Abbrv == subject
+                join co in db.Course on d.DepartmentId equals co.DepartmentId
+                where co.Number == num
+                join cl in db.Class on co.CourseId equals cl.CourseId
+                where cl.Year == year
+                join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
+                where ac.Name == category
+                join a in db.Assignment on ac.AcId equals a.AcId
+                where a.Name == asgname
+                join sub in db.Submission on a.AId equals sub.AId
+                join stu in db.Student on sub.UId equals stu.UId
+                select new
+                {
+                    fname = stu.FName,
+                    lname = stu.LName,
+                    uid = stu.UId,
+                    time = sub.Time,
+                    score = sub.Score
+                };
      
-      return Json(null);
+      return Json(query.ToArray());
     }
 
 
@@ -253,9 +309,32 @@ namespace LMS.Controllers
     /// <param name="score">The new score for the submission</param>
     /// <returns>A JSON object containing success = true/false</returns>
     public IActionResult GradeSubmission(string subject, int num, string season, int year, string category, string asgname, string uid, int score)
-    {    
+    {
+            uint theID = (uint)int.Parse(uid.Remove(0, 1));
+            var query = from d in db.Department
+                        where d.Abbrv == subject
+                        join co in db.Course on d.DepartmentId equals co.DepartmentId
+                        where co.Number == num
+                        join cl in db.Class on co.CourseId equals cl.CourseId
+                        where cl.Year == year && cl.Season == season
+                        join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
+                        where ac.Name == category
+                        join a in db.Assignment on ac.AcId equals a.AcId
+                        where a.Name == asgname
+                        join s in db.Submission on a.AId equals s.AId
+                        where s.UId == theID
+                        select s;
 
-      return Json(new { success = true });
+            if(query.Any())
+            {
+                foreach (var item in query)
+                {
+                    item.Score = (uint)score;
+                    return Json(new { success = true });
+                }
+            }
+
+      return Json(new { success = false });
     }
 
 
@@ -272,7 +351,9 @@ namespace LMS.Controllers
     /// <returns>The JSON array</returns>
     public IActionResult GetMyClasses(string uid)
     {
+            // removes u from uid
             int theid = int.Parse(uid.Remove(0, 1));
+
             var query =
                 from cl in db.Class
                 where cl.ProfessorId == theid

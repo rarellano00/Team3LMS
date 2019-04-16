@@ -272,7 +272,7 @@ namespace LMS.Controllers
                 }
             }
 
-            return Json(new { sucess = false });
+            return Json(new { success = false });
         }
 
         /*******End code to modify********/
