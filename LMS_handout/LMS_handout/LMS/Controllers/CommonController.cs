@@ -121,16 +121,19 @@ namespace LMS.Controllers
         {
 
             var query =
-                from c in db.Class
+                from d in db.Department where d.Abbrv == subject
+                join co in db.Course on d.DepartmentId equals co.DepartmentId
+                where co.Number == number
+                join cl in db.Class on co.CourseId equals cl.CourseId
                 select new
                 {
-                    season = c.Season,
-                    year = c.Year,
-                    location = c.Location,
-                    start = c.Start,
-                    end = c.End,
-                    fname = c.Professor.FName,
-                    lname = c.Professor.LName
+                    season = cl.Season,
+                    year = cl.Year,
+                    location = cl.Location,
+                    start = cl.Start,
+                    end = cl.End,
+                    fname = cl.Professor.FName,
+                    lname = cl.Professor.LName
                 };
 
             return Json(query.ToArray());
@@ -150,8 +153,8 @@ namespace LMS.Controllers
         /// <returns>The assignment contents</returns>
         public IActionResult GetAssignmentContents(string subject, int num, string season, int year, string category, string asgname)
         {
-            var query =
-                from d in db.Department
+            Assignment query =
+                (from d in db.Department
                 where d.Abbrv == subject
                 join c in db.Course on d.DepartmentId equals c.DepartmentId
                 where c.Number == num
@@ -161,12 +164,12 @@ namespace LMS.Controllers
                 where ac.Name == category
                 join a in db.Assignment on ac.AcId equals a.AcId
                 where a.Name == asgname
-                select a.Contents;
+                select a).First();
 
 
             // TODO : returning correctly?
 
-            return Content(query.ToString());
+            return Content(query.Contents);
         }
 
 
@@ -188,24 +191,22 @@ namespace LMS.Controllers
         {
             uint sID = (uint)int.Parse(uid.Remove(0, 1));
 
-            var query =
-                      from d in db.Department
-                      where d.Abbrv == subject
-                      join c in db.Course on d.DepartmentId equals c.DepartmentId
-                      where c.Number == num
-                      join cl in db.Class on c.CourseId equals cl.CourseId
-                      where cl.Season == season && cl.Year == year
-                      join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
-                      where ac.Name == category
-                      join a in db.Assignment on ac.AcId equals a.AcId
-                      where a.Name == asgname
-                      join s in db.Submission on a.AId equals s.AId
-                      where s.UId == sID
-                      select s.Contents;
+            Submission query =
+                      (from d in db.Department
+                       where d.Abbrv == subject
+                       join c in db.Course on d.DepartmentId equals c.DepartmentId
+                       where c.Number == num
+                       join cl in db.Class on c.CourseId equals cl.CourseId
+                       where cl.Season == season && cl.Year == year
+                       join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
+                       where ac.Name == category
+                       join a in db.Assignment on ac.AcId equals a.AcId
+                       where a.Name == asgname
+                       join s in db.Submission on a.AId equals s.AId
+                       where s.UId == sID
+                       select s).First();
 
-            // TODO : correct return statement?
-
-            return Content(query.ToString());
+            return Content(query.Contents);
         }
 
 
