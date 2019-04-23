@@ -161,7 +161,7 @@ namespace LMS.Controllers
         public IActionResult GetAssignmentsInCategory(string subject, int num, string season, int year, string category)
         {
             // case for when we just want all the assignments in a class
-            if(category == null)
+            if (category == null)
             {
                 var nullQuery =
                 from d in db.Department
@@ -274,7 +274,7 @@ namespace LMS.Controllers
             }
 
             // make sure the category doesn't already exist
-            if(db.AssignmentCategory.Any(checkCat => checkCat.Name == category && checkCat.ClassId == theID))
+            if (db.AssignmentCategory.Any(checkCat => checkCat.Name == category && checkCat.ClassId == theID))
             {
                 return Json(new { success = false });
             }
@@ -391,7 +391,7 @@ namespace LMS.Controllers
                 {
                     fname = stu.FName,
                     lname = stu.LName,
-                    uid = "u" + stu.UId.ToString().PadLeft(7,'0'),
+                    uid = "u" + stu.UId.ToString().PadLeft(7, '0'),
                     time = sub.Time,
                     score = sub.Score
                 };
@@ -417,6 +417,8 @@ namespace LMS.Controllers
         {
             uint theID = (uint)int.Parse(uid.Remove(0, 1));
 
+            bool changedGrade = false;
+
             var query = from d in db.Department
                         where d.Abbrv == subject
                         join co in db.Course on d.DepartmentId equals co.DepartmentId
@@ -429,18 +431,31 @@ namespace LMS.Controllers
                         where a.Name == asgname
                         join s in db.Submission on a.AId equals s.AId
                         where s.UId == theID
-                        select s;
+                        select new
+                        {
+                            ac = ac,
+                            s = s
+                        };
 
-            if (query.Any())
+            foreach (var ac in query)
             {
-                foreach (var item in query)
+                foreach (var @as in ac.ac.Assignment)
                 {
-                    item.Score = (uint)score;
-                    return Json(new { success = true });
+
                 }
             }
 
-            return Json(new { success = false });
+            query.Score = (uint)score;
+
+            if (db.SaveChanges() > 0)
+            {
+                changedGrade = true;
+            }
+
+
+
+
+                return Json(new { success = changedGrade });
         }
 
 
