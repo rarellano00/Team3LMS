@@ -78,7 +78,7 @@ namespace LMS.Controllers
                 {
                     lname = p.LName,
                     fname = p.FName,
-                    uid = p.UId
+                    uid = "u" + p.UId.ToString().PadLeft(7, '0')
                 };
       return Json(query.ToArray());
     }

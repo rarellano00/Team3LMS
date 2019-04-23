@@ -131,7 +131,7 @@ namespace LMS.Controllers
                 {
                     fname = s.FName,
                     lname = s.LName,
-                    uid = s.UId,
+                    uid = "u" + s.UId.ToString().PadLeft(7, '0'),
                     dob = s.Dob,
                     grade = e.Grade
                 };
@@ -391,10 +391,11 @@ namespace LMS.Controllers
                 {
                     fname = stu.FName,
                     lname = stu.LName,
-                    uid = stu.UId,
+                    uid = "u" + stu.UId.ToString().PadLeft(7,'0'),
                     time = sub.Time,
                     score = sub.Score
                 };
+
 
             return Json(query.ToArray());
         }
@@ -415,6 +416,7 @@ namespace LMS.Controllers
         public IActionResult GradeSubmission(string subject, int num, string season, int year, string category, string asgname, string uid, int score)
         {
             uint theID = (uint)int.Parse(uid.Remove(0, 1));
+
             var query = from d in db.Department
                         where d.Abbrv == subject
                         join co in db.Course on d.DepartmentId equals co.DepartmentId

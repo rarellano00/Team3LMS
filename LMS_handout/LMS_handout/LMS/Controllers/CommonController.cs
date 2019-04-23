@@ -54,12 +54,8 @@ namespace LMS.Controllers
         public IActionResult GetDepartments()
         {
 
-            //return Json(new[] { new { name = "None", subject = "NONE" } });
-
-
             var query =
                 from d in db.Department
-
                 select new
                 {
                     name = d.Name,
@@ -121,7 +117,8 @@ namespace LMS.Controllers
         {
 
             var query =
-                from d in db.Department where d.Abbrv == subject
+                from d in db.Department
+                where d.Abbrv == subject
                 join co in db.Course on d.DepartmentId equals co.DepartmentId
                 where co.Number == number
                 join cl in db.Class on co.CourseId equals cl.CourseId
@@ -155,16 +152,16 @@ namespace LMS.Controllers
         {
             Assignment query =
                 (from d in db.Department
-                where d.Abbrv == subject
-                join c in db.Course on d.DepartmentId equals c.DepartmentId
-                where c.Number == num
-                join cl in db.Class on c.CourseId equals cl.CourseId
-                where cl.Season == season && cl.Year == year
-                join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
-                where ac.Name == category
-                join a in db.Assignment on ac.AcId equals a.AcId
-                where a.Name == asgname
-                select a).First();
+                 where d.Abbrv == subject
+                 join c in db.Course on d.DepartmentId equals c.DepartmentId
+                 where c.Number == num
+                 join cl in db.Class on c.CourseId equals cl.CourseId
+                 where cl.Season == season && cl.Year == year
+                 join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
+                 where ac.Name == category
+                 join a in db.Assignment on ac.AcId equals a.AcId
+                 where a.Name == asgname
+                 select a).First();
 
 
             // TODO : returning correctly?
@@ -189,24 +186,29 @@ namespace LMS.Controllers
         /// <returns>The submission text</returns>
         public IActionResult GetSubmissionText(string subject, int num, string season, int year, string category, string asgname, string uid)
         {
-            uint sID = (uint)int.Parse(uid.Remove(0, 1));
+            uint sID = uint.Parse(uid.Remove(0, 1));
 
-            Submission query =
-                      (from d in db.Department
-                       where d.Abbrv == subject
-                       join c in db.Course on d.DepartmentId equals c.DepartmentId
-                       where c.Number == num
-                       join cl in db.Class on c.CourseId equals cl.CourseId
-                       where cl.Season == season && cl.Year == year
-                       join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
-                       where ac.Name == category
-                       join a in db.Assignment on ac.AcId equals a.AcId
-                       where a.Name == asgname
-                       join s in db.Submission on a.AId equals s.AId
-                       where s.UId == sID
-                       select s).First();
+            var query =
+                      from d in db.Department
+                      where d.Abbrv == subject
+                      join c in db.Course on d.DepartmentId equals c.DepartmentId
+                      where c.Number == num
+                      join cl in db.Class on c.CourseId equals cl.CourseId
+                      where cl.Season == season && cl.Year == year
+                      join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
+                      where ac.Name == category
+                      join a in db.Assignment on ac.AcId equals a.AcId
+                      where a.Name == asgname
+                      join s in db.Submission on a.AId equals s.AId
+                      where s.UId == sID
+                      select s;
 
-            return Content(query.Contents);
+            if (query.Any())
+            {
+                return Content(query.First().Contents);
+            }
+
+            return Content("");
         }
 
 
@@ -233,7 +235,7 @@ namespace LMS.Controllers
              */
 
 
-            uint theID = (uint)int.Parse(uid.Remove(0, 1));
+            uint theID = uint.Parse(uid.Remove(0, 1));
 
             var squery =
                 from s in db.Student
@@ -254,21 +256,21 @@ namespace LMS.Controllers
             {
                 foreach (var item in squery)
                 {
-                    return Json(new { fname = item.fname, lname = item.lname, uid = item.uid, department = item.department });
+                    return Json(new { fname = item.fname, lname = item.lname, uid = "u" + item.uid.ToString().PadLeft(7, '0'), department = item.department });
                 }
             }
             else if (pquery.Any())
             {
                 foreach (var item in pquery)
                 {
-                    return Json(new { fname = item.fname, lname = item.lname, uid = item.uid, department = item.department });
+                    return Json(new { fname = item.fname, lname = item.lname, uid = "u" + item.uid.ToString().PadLeft(7, '0'), department = item.department });
                 }
             }
             else
             {
                 foreach (var item in aquery)
                 {
-                    return Json(new { fname = item.FName, lname = item.LName, uid = item.UId });
+                    return Json(new { fname = item.FName, lname = item.LName, uid = "u" + item.UId.ToString().PadLeft(7, '0') });
 
                 }
             }
