@@ -150,7 +150,7 @@ namespace LMS.Controllers
             }
 
             if (db.Class.Where(cl => cl.Location == location &&
-            ((start.CompareTo(cl.End) <= 0 && end.CompareTo(cl.End) >= 0) || (start.CompareTo(cl.Start) <= 0 && end.CompareTo(cl.Start) >= 0))).Any())
+            ((start.TimeOfDay.CompareTo(cl.End) <= 0 && end.TimeOfDay.CompareTo(cl.End) >= 0) || (start.TimeOfDay.CompareTo(cl.Start) <= 0 && end.TimeOfDay.CompareTo(cl.Start) >= 0))).Any())
             {
                 return Json(new { success = false });
             }
