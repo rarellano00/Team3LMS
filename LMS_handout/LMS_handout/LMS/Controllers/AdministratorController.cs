@@ -8,39 +8,39 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LMS.Controllers
 {
-  [Authorize(Roles = "Administrator")]
-  public class AdministratorController : CommonController
-  {
-    public IActionResult Index()
+    [Authorize(Roles = "Administrator")]
+    public class AdministratorController : CommonController
     {
-      return View();
-    }
+        public IActionResult Index()
+        {
+            return View();
+        }
 
-    public IActionResult Department(string subject)
-    {
-      ViewData["subject"] = subject;
-      return View();
-    }
+        public IActionResult Department(string subject)
+        {
+            ViewData["subject"] = subject;
+            return View();
+        }
 
-    public IActionResult Course(string subject, string num)
-    {
-      ViewData["subject"] = subject;
-      ViewData["num"] = num;
-      return View();
-    }
+        public IActionResult Course(string subject, string num)
+        {
+            ViewData["subject"] = subject;
+            ViewData["num"] = num;
+            return View();
+        }
 
-    /*******Begin code to modify********/
+        /*******Begin code to modify********/
 
-    /// <summary>
-    /// Returns a JSON array of all the courses in the given department.
-    /// Each object in the array should have the following fields:
-    /// "number" - The course number (as in 5530)
-    /// "name" - The course name (as in "Database Systems")
-    /// </summary>
-    /// <param name="subject">The department subject abbreviation (as in "CS")</param>
-    /// <returns>The JSON result</returns>
-    public IActionResult GetCourses(string subject)
-    {
+        /// <summary>
+        /// Returns a JSON array of all the courses in the given department.
+        /// Each object in the array should have the following fields:
+        /// "number" - The course number (as in 5530)
+        /// "name" - The course name (as in "Database Systems")
+        /// </summary>
+        /// <param name="subject">The department subject abbreviation (as in "CS")</param>
+        /// <returns>The JSON result</returns>
+        public IActionResult GetCourses(string subject)
+        {
             var query =
                 from d in db.Department
                 where d.Abbrv == subject
@@ -50,26 +50,26 @@ namespace LMS.Controllers
                     name = c.Name,
                     number = c.Number
                 };
-                      
-
-      return Json(query.ToArray());
-    }
 
 
-    
+            return Json(query.ToArray());
+        }
 
 
-    /// <summary>
-    /// Returns a JSON array of all the professors working in a given department.
-    /// Each object in the array should have the following fields:
-    /// "lname" - The professor's last name
-    /// "fname" - The professor's first name
-    /// "uid" - The professor's uid
-    /// </summary>
-    /// <param name="subject">The department subject abbreviation</param>
-    /// <returns>The JSON result</returns>
-    public IActionResult GetProfessors(string subject)
-    {
+
+
+
+        /// <summary>
+        /// Returns a JSON array of all the professors working in a given department.
+        /// Each object in the array should have the following fields:
+        /// "lname" - The professor's last name
+        /// "fname" - The professor's first name
+        /// "uid" - The professor's uid
+        /// </summary>
+        /// <param name="subject">The department subject abbreviation</param>
+        /// <returns>The JSON result</returns>
+        public IActionResult GetProfessors(string subject)
+        {
             var query =
                 from d in db.Department
                 where d.Abbrv == subject
@@ -80,30 +80,30 @@ namespace LMS.Controllers
                     fname = p.FName,
                     uid = "u" + p.UId.ToString().PadLeft(7, '0')
                 };
-      return Json(query.ToArray());
-    }
+            return Json(query.ToArray());
+        }
 
 
 
-    /// <summary>
-    /// Creates a course.
-    /// A course is uniquely identified by its number + the subject to which it belongs
-    /// </summary>
-    /// <param name="subject">The subject abbreviation for the department in which the course will be added</param>
-    /// <param name="number">The course number</param>
-    /// <param name="name">The course name</param>
-    /// <returns>A JSON object containing {success = true/false}.
-    /// false if the course already exists, true otherwise.</returns>
-    public IActionResult CreateCourse(string subject, int number, string name)
-    {
+        /// <summary>
+        /// Creates a course.
+        /// A course is uniquely identified by its number + the subject to which it belongs
+        /// </summary>
+        /// <param name="subject">The subject abbreviation for the department in which the course will be added</param>
+        /// <param name="number">The course number</param>
+        /// <param name="name">The course name</param>
+        /// <returns>A JSON object containing {success = true/false}.
+        /// false if the course already exists, true otherwise.</returns>
+        public IActionResult CreateCourse(string subject, int number, string name)
+        {
             Course c = new Course();
             c.Number = (short)number;
             c.Name = name;
             int depId = -1;
             var query =
                 (from d in db.Department
-                where d.Abbrv == subject
-                select d.DepartmentId).ToList();
+                 where d.Abbrv == subject
+                 select d.DepartmentId).ToList();
             foreach (var item in query)
             {
                 depId = int.Parse(item.ToString());
@@ -114,36 +114,48 @@ namespace LMS.Controllers
             // need to detect if was added or not 
             db.Course.Add(c);
             db.SaveChanges();
-            if(c.CourseId <0)
+            if (c.CourseId < 0)
             {
                 return Json(new { success = false });
             }
 
 
 
-      return Json(new { success = true });
-    }
+            return Json(new { success = true });
+        }
 
 
 
-    /// <summary>
-    /// Creates a class offering of a given course.
-    /// </summary>
-    /// <param name="subject">The department subject abbreviation</param>
-    /// <param name="number">The course number</param>
-    /// <param name="season">The season part of the semester</param>
-    /// <param name="year">The year part of the semester</param>
-    /// <param name="start">The start time</param>
-    /// <param name="end">The end time</param>
-    /// <param name="location">The location</param>
-    /// <param name="instructor">The uid of the professor</param>
-    /// <returns>A JSON object containing {success = true/false}. 
-    /// false if another class occupies the same location during any time 
-    /// within the start-end range in the same semester, or if there is already
-    /// a Class offering of the same Course in the same Semester,
-    /// true otherwise.</returns>
-    public IActionResult CreateClass(string subject, int number, string season, int year, DateTime start, DateTime end, string location, string instructor)
-    {
+        /// <summary>
+        /// Creates a class offering of a given course.
+        /// </summary>
+        /// <param name="subject">The department subject abbreviation</param>
+        /// <param name="number">The course number</param>
+        /// <param name="season">The season part of the semester</param>
+        /// <param name="year">The year part of the semester</param>
+        /// <param name="start">The start time</param>
+        /// <param name="end">The end time</param>
+        /// <param name="location">The location</param>
+        /// <param name="instructor">The uid of the professor</param>
+        /// <returns>A JSON object containing {success = true/false}. 
+        /// false if another class occupies the same location during any time 
+        /// within the start-end range in the same semester, or if there is already
+        /// a Class offering of the same Course in the same Semester,
+        /// true otherwise.</returns>
+        public IActionResult CreateClass(string subject, int number, string season, int year, DateTime start, DateTime end, string location, string instructor)
+        {
+            if (db.Class.Where(cl => cl.Season == season && cl.Year == year && cl.Course.Number == number).Any())
+            {
+                return Json(new { success = false });
+            }
+
+            if (db.Class.Where(cl => cl.Location == location &&
+            ((start.CompareTo(cl.End) <= 0 && end.CompareTo(cl.End) >= 0) || (start.CompareTo(cl.Start) <= 0 && end.CompareTo(cl.Start) >= 0))).Any())
+            {
+                return Json(new { success = false });
+            }
+
+
             Class c = new Class();
             c.Season = season;
             c.Start = start.TimeOfDay;
@@ -165,16 +177,16 @@ namespace LMS.Controllers
 
             db.Class.Add(c);
             db.SaveChanges();
-            if(c.ClassId < 0)
+            if (c.ClassId < 0)
             {
                 return Json(new { success = false });
             }
 
-      return Json(new { success = true });
+            return Json(new { success = true });
+        }
+
+
+        /*******End code to modify********/
+
     }
-
-
-    /*******End code to modify********/
-
-  }
 }
