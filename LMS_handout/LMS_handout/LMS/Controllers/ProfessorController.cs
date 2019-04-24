@@ -348,7 +348,21 @@ namespace LMS.Controllers
             db.Assignment.Add(a);
             db.SaveChanges();
 
+            var query2 =
+                from d in db.Department
+                where d.Abbrv == subject
+                join co in db.Course on d.DepartmentId equals co.DepartmentId
+                where co.Number == num
+                join cl in db.Class on co.CourseId equals cl.CourseId
+                where cl.Season == season && cl.Year == year
+                join e in db.Enrolled on cl.ClassId equals e.ClassId
+                select e;
 
+            foreach (var enrolled in query2)
+            {
+                uint id = enrolled.UId;
+                AutoGrade(subject, num, season, year, category, asgname, "u" + id.ToString().PadLeft(7, '0'));
+            }
 
 
             return Json(new { success = true });
@@ -419,45 +433,163 @@ namespace LMS.Controllers
 
             bool changedGrade = false;
 
-            var query = from d in db.Department
-                        where d.Abbrv == subject
-                        join co in db.Course on d.DepartmentId equals co.DepartmentId
-                        where co.Number == num
-                        join cl in db.Class on co.CourseId equals cl.CourseId
-                        where cl.Year == year && cl.Season == season
-                        join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
-                        where ac.Name == category
-                        join a in db.Assignment on ac.AcId equals a.AcId
-                        where a.Name == asgname
-                        join s in db.Submission on a.AId equals s.AId
-                        where s.UId == theID
-                        select new
-                        {
-                            ac = ac,
-                            s = s
-                        };
-
-            foreach (var ac in query)
-            {
-                foreach (var @as in ac.ac.Assignment)
-                {
-
-                }
-            }
+            var query = (from d in db.Department
+                         where d.Abbrv == subject
+                         join co in db.Course on d.DepartmentId equals co.DepartmentId
+                         where co.Number == num
+                         join cl in db.Class on co.CourseId equals cl.CourseId
+                         where cl.Year == year && cl.Season == season
+                         join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
+                         where ac.Name == category
+                         join a in db.Assignment on ac.AcId equals a.AcId
+                         where a.Name == asgname
+                         join s in db.Submission on a.AId equals s.AId
+                         where s.UId == theID
+                         select s).Single();
 
             query.Score = (uint)score;
-
             if (db.SaveChanges() > 0)
             {
                 changedGrade = true;
             }
-
-
-
-
-                return Json(new { success = changedGrade });
+            AutoGrade(subject, num, season, year, category, asgname, uid);
+            return Json(new { success = changedGrade });
         }
 
+
+        /// <summary>
+        /// Automatically calculates and saves the grade of a student in a class
+        /// </summary>
+        /// <param name="subject">The course subject abbreviation</param>
+        /// <param name="num">The course number</param>
+        /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
+        /// <param name="year">The year part of the semester for the class the assignment belongs to</param>
+        /// <param name="category">The name of the assignment category in the class</param>
+        /// <param name="asgname">The name of the assignment</param>
+        /// <param name="uid">The uid of the student who's submission is being graded</param>
+        /// <param name="score">The new score for the submission</param>
+        /// <returns>A JSON object containing success = true/false</returns>
+        public void AutoGrade(string subject, int num, string season, int year, string category, string asgname, string uid)
+        {
+            // need to get the number out of the uid
+            uint theID = (uint)int.Parse(uid.Remove(0, 1));
+            var query1 = from d in db.Department
+                         where d.Abbrv == subject
+                         join co in db.Course on d.DepartmentId equals co.DepartmentId
+                         where co.Number == num
+                         join cl in db.Class on co.CourseId equals cl.CourseId
+                         where cl.Year == year && cl.Season == season
+                         join ac in db.AssignmentCategory on cl.ClassId equals ac.ClassId
+                         where ac.Name == category
+                         select new
+                         {
+                             ac,
+                             asg = from x in ac.Assignment
+                                   where ac.AcId == x.AcId
+                                   select new
+                                   {
+                                       x,
+                                       sub = from y in x.Submission
+                                             where y.UId == theID
+                                             select y
+                                   }
+
+                         };
+
+            double totalGrade = 0;
+            double totalWeights = 0;
+            if (query1.Any())
+            {
+
+                foreach (var item in query1)
+                {
+                    double weight = item.ac.Weight;
+                    double possible = 0;
+                    double earned = 0;
+                    foreach (var item1 in item.asg )
+                    {
+                        possible += item1.x.Points;
+                        if (item1.sub.Any())
+                        {
+                            if (item1.sub.Single().UId == theID)
+                            {
+                                earned += item1.sub.Single().Score;
+                            }
+                            else
+                            {
+                                earned += 0;
+                            }
+                        }
+                    }
+                    double percentage = earned / possible;
+                    totalGrade += percentage * weight;
+                    totalWeights += weight;
+                }
+                double scalingFactor = 100 / totalWeights;
+                double finalGrade = totalGrade * scalingFactor;
+                string grade = "";
+                if (finalGrade >= 93)
+                {
+                    grade = "A";
+                }
+                else if (finalGrade < 93 && finalGrade >= 90)
+                {
+                    grade = "A-";
+                }
+                else if (finalGrade < 90 && finalGrade >= 87)
+                {
+                    grade = "B+";
+                }
+                else if (finalGrade < 87 && finalGrade >= 83)
+                {
+                    grade = "B";
+                }
+                else if (finalGrade < 83 && finalGrade >= 80)
+                {
+                    grade = "B-";
+                }
+                else if (finalGrade < 80 && finalGrade >= 77)
+                {
+                    grade = "C+";
+                }
+                else if (finalGrade < 77 && finalGrade >= 73)
+                {
+                    grade = "C";
+                }
+                else if (finalGrade < 73 && finalGrade >= 70)
+                {
+                    grade = "C-";
+                }
+                else if (finalGrade < 70 && finalGrade >= 67)
+                {
+                    grade = "D+";
+                }
+                else if (finalGrade < 67 && finalGrade >= 63)
+                {
+                    grade = "D";
+                }
+                else if (finalGrade < 63 && finalGrade >= 60)
+                {
+                    grade = "D-";
+                }
+                else if (finalGrade < 60)
+                {
+                    grade = "E";
+                }
+
+                var query2 = from d in db.Department
+                             where d.Abbrv == subject
+                             join co in db.Course on d.DepartmentId equals co.DepartmentId
+                             where co.Number == num
+                             join cl in db.Class on co.CourseId equals cl.CourseId
+                             where cl.Year == year && cl.Season == season
+                             join e in db.Enrolled on cl.ClassId equals e.ClassId
+                             where e.UId == theID
+                             select e;
+                query2.Single().Grade = grade;
+                db.SaveChanges();
+            }
+        }
 
         /// <summary>
         /// Returns a JSON array of the classes taught by the specified professor
