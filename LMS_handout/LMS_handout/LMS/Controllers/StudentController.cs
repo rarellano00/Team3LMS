@@ -208,10 +208,15 @@ namespace LMS.Controllers
                 db.Submission.Add(newSub);
             }
 
-            db.SaveChanges();
+            if (db.SaveChanges() > 0)
+            {
+                return Json(new { success = true });
+            }
+            else
+            {
+                return Json(new { success = false });
+            }
 
-
-            return Json(new { success = true });
         }
 
 
@@ -227,8 +232,8 @@ namespace LMS.Controllers
         /// false if the student is already enrolled in the class, true otherwise.</returns>
         public IActionResult Enroll(string subject, int num, string season, int year, string uid)
         {
+            
             uint theID = uint.Parse(uid.Remove(0, 1));
-
             var query =
                 from d in db.Department
                 where d.Abbrv == subject
@@ -241,6 +246,10 @@ namespace LMS.Controllers
                     cl.ClassId
                 };
 
+            if (db.Enrolled.Where(en => en.UId == theID && en.ClassId == query.First().ClassId).Any())
+            {
+                return Json(new { success = false });
+            }
             Enrolled e = new Enrolled();
             e.ClassId = query.First().ClassId;
             e.UId = theID;
