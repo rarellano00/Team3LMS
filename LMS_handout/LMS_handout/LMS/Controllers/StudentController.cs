@@ -349,7 +349,7 @@ namespace LMS.Controllers
             
             if(classes == 0)
             {
-                return Json(gpa);
+                return Json(new { gpa = gpa });
             }
 
             gpa = total / classes;
