@@ -96,20 +96,28 @@ namespace LMS.Controllers
         /// false if the course already exists, true otherwise.</returns>
         public IActionResult CreateCourse(string subject, int number, string name)
         {
+
             Course c = new Course();
             c.Number = (short)number;
             c.Name = name;
-            int depId = -1;
             var query =
                 (from d in db.Department
                  where d.Abbrv == subject
-                 select d.DepartmentId).ToList();
+                 select d).First();
+            /*
             foreach (var item in query)
             {
                 depId = int.Parse(item.ToString());
             }
+            */
+            uint depId = query.DepartmentId;
 
-            c.DepartmentId = (uint)depId;
+            c.DepartmentId = depId;
+
+            if(db.Course.Where(co=> co.Number == number && co.DepartmentId == depId).Any())
+            {
+                return Json(new { success = false });
+            }
 
             // need to detect if was added or not 
             db.Course.Add(c);
